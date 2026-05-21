@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Scheduler — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--s1:#111;--s2:#181818;--s3:#222;--border:#2a2a2a;--border2:#333;--text:#f0f0f0;--text2:#888;--text3:#555;--red:#ff2d2d;--red2:#ff5555;--green:#22c55e;--yellow:#facc15;--blue:#3b82f6;--purple:#a855f7;--mono:'DM Mono',monospace;--sans:'Syne',sans-serif;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--s1)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.hidden{display:none!important}
+/* OVERLAY */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(4px);overflow-y:auto;padding:20px}
+.overlay-box{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:36px;width:100%;max-width:520px;position:relative}
+.overlay-box h1{font-size:1.5rem;font-weight:800;margin-bottom:8px}
+.overlay-box p{color:var(--text2);font-size:.88rem;margin-bottom:24px;line-height:1.65}
+.overlay-box a{color:var(--red)}
+.overlay-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px}
+.overlay-close:hover{background:var(--s2);color:var(--text)}
+/* LOADING */
+#loadingScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.load-logo{font-size:1.8rem;font-weight:800}.load-logo span{color:var(--red)}
+.load-status{font-size:.82rem;color:var(--text3);font-family:var(--mono);max-width:400px;text-align:center;line-height:1.6}
+/* FORMS */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.75rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:.88rem;padding:10px 12px;border-radius:8px;outline:none;transition:border .15s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--red)}
+.field textarea{resize:vertical;min-height:80px;line-height:1.5}
+.field select option{background:var(--s2)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-hint{font-size:.72rem;color:var(--text3);margin-top:5px;font-family:var(--mono)}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-family:var(--sans);font-size:.88rem;font-weight:600;transition:all .15s}
+.btn-primary{background:var(--red);color:#fff}.btn-primary:hover{background:var(--red2);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-ghost:hover{background:var(--s2);color:var(--text)}
+.btn-blue{background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.3)}.btn-blue:hover{background:rgba(59,130,246,.25)}
+.btn-green{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}.btn-green:hover{background:rgba(34,197,94,.25)}
+.btn-sm{padding:6px 14px;font-size:.8rem}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.btn-full{width:100%;justify-content:center}
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(255,45,45,.12),transparent)}
+.login-logo{font-size:2.2rem;font-weight:800;margin-bottom:8px}.login-logo span{color:var(--red)}
+.login-sub{color:var(--text2);font-size:.95rem;margin-bottom:40px;text-align:center}
+.google-btn{display:flex;align-items:center;gap:12px;background:#fff;color:#1a1a1a;padding:13px 28px;border-radius:10px;border:none;cursor:pointer;font-family:var(--sans);font-size:1rem;font-weight:600;transition:all .15s;box-shadow:0 2px 20px rgba(0,0,0,.4)}
+.google-btn:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(0,0,0,.5)}
+.google-btn svg{width:22px;height:22px;flex-shrink:0}
+.login-note{margin-top:20px;font-size:.78rem;color:var(--text3);text-align:center;max-width:360px}
+.setup-link{color:var(--red);cursor:pointer;text-decoration:underline}
+/* MAIN */
+#mainApp{display:flex;flex-direction:column;min-height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:58px;background:var(--s1);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.header-logo{font-size:1.1rem;font-weight:800}.header-logo span{color:var(--red)}
+.header-right{display:flex;align-items:center;gap:12px}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--border2);padding:5px 12px 5px 8px;border-radius:20px;font-size:.82rem;color:var(--text2)}
+.user-avatar{width:24px;height:24px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;overflow:hidden}
+.user-avatar img{width:100%;height:100%;object-fit:cover}
+nav{display:flex;gap:2px;padding:0 28px;background:var(--s1);border-bottom:1px solid var(--border)}
+.nav-tab{padding:14px 20px;font-size:.85rem;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:7px}
+.nav-tab:hover{color:var(--text2)}.nav-tab.active{color:var(--text);border-bottom-color:var(--red)}
+main{flex:1;padding:32px 28px;max-width:960px;width:100%;margin:0 auto}
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
+.card h3{font-size:1rem;font-weight:700;margin-bottom:4px}
+.card p{font-size:.82rem;color:var(--text2);margin-bottom:20px;line-height:1.6}
+.section-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+/* MODE TOGGLE */
+.mode-tabs{display:flex;gap:0;background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:4px;margin-bottom:24px;width:fit-content}
+.mode-tab{padding:8px 20px;border-radius:7px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--text3);transition:all .15s}
+.mode-tab.active{background:var(--red);color:#fff}
+/* UPLOAD */
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s1);position:relative}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--red);background:rgba(255,45,45,.04)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:2rem;margin-bottom:8px}
+.drop-label{font-size:.85rem;font-weight:600;color:var(--text2)}
+.drop-sub{font-size:.75rem;color:var(--text3);margin-top:4px}
+.file-preview{margin-top:12px;padding:10px 12px;background:var(--s2);border-radius:8px;display:flex;align-items:center;gap:10px;text-align:left}
+.file-preview-name{font-size:.8rem;font-family:var(--mono);color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-preview-size{font-size:.75rem;color:var(--text3);font-family:var(--mono)}
+.thumb-preview{margin-top:12px;border-radius:8px;overflow:hidden}
+.thumb-preview img{width:100%;height:110px;object-fit:cover;display:block}
+.type-selector{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.type-option{position:relative}
+.type-option input[type=radio]{position:absolute;opacity:0;pointer-events:none}
+.type-label{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--s2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all .15s}
+.type-label:hover{border-color:var(--border)}
+.type-option input:checked+.type-label{border-color:var(--red);background:rgba(255,45,45,.07)}
+.type-icon{font-size:1.3rem}.type-text{font-size:.85rem;font-weight:600}.type-sub{font-size:.72rem;color:var(--text3)}
+.schedule-box{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px}
+/* PLATFORM SELECTOR */
+.platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.platform-option{position:relative}
+.platform-option input[type=checkbox]{position:absolute;opacity:0;pointer-events:none}
+.platform-label{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:var(--s2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all .15s;text-align:center}
+.platform-label:hover{border-color:var(--border)}
+.platform-option input:checked+.platform-label{border-color:var(--red);background:rgba(255,45,45,.07)}
+.platform-option.always .platform-label{border-color:var(--green);background:rgba(34,197,94,.05);cursor:default}
+.platform-icon{font-size:1.5rem}
+.platform-name{font-size:.82rem;font-weight:700}
+.platform-sub{font-size:.7rem;color:var(--text3)}
+.platform-ok{font-size:.7rem;color:var(--green)}
+/* AUTO MODE */
+.auto-flow{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:16px;flex-wrap:wrap}
+.auto-flow-box{flex:1;min-width:80px;background:var(--s3);border-radius:8px;padding:10px;text-align:center}
+.auto-flow-label{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.auto-flow-val{font-size:.82rem;font-weight:700;color:var(--text);font-family:var(--mono)}
+.auto-flow-arrow{color:var(--text3);font-size:1rem;flex-shrink:0}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat-box{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:14px;text-align:center}
+.stat-num{font-size:1.6rem;font-weight:800;color:var(--text)}
+.stat-label{font-size:.72rem;color:var(--text3);margin-top:2px}
+.stat-sub{font-size:.72rem;margin-top:3px;font-family:var(--mono);color:var(--text3)}
+/* PROGRESS */
+#progressArea{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:20px}
+.progress-label{font-size:.85rem;color:var(--text2);margin-bottom:10px;display:flex;justify-content:space-between}
+.progress-bar-outer{height:6px;background:var(--s3);border-radius:3px;overflow:hidden}
+.progress-bar-inner{height:100%;background:var(--red);border-radius:3px;transition:width .3s ease}
+.progress-steps{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+.progress-step{font-size:.78rem;font-family:var(--mono);color:var(--text3);display:flex;align-items:center;gap:8px}
+.progress-step.done{color:var(--green)}.progress-step.active{color:var(--text)}
+.step-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+/* QUEUE */
+.queue-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.queue-count{font-size:.8rem;color:var(--text3);font-family:var(--mono)}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:.72rem;font-weight:600;font-family:var(--mono)}
+.badge-pending{background:rgba(250,204,21,.12);color:var(--yellow)}
+.badge-uploading{background:rgba(59,130,246,.12);color:var(--blue)}
+.badge-uploaded{background:rgba(34,197,94,.12);color:var(--green)}
+.badge-error{background:rgba(255,45,45,.12);color:var(--red2)}
+.queue-table{width:100%;border-collapse:collapse}
+.queue-table th{text-align:left;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:8px 12px;border-bottom:1px solid var(--border)}
+.queue-table td{padding:12px;border-bottom:1px solid var(--border);font-size:.85rem;vertical-align:middle}
+.queue-table tr:last-child td{border-bottom:none}
+.queue-table tr:hover td{background:var(--s1)}
+.queue-title{font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-time{font-family:var(--mono);font-size:.78rem;color:var(--text2)}
+.queue-type{font-family:var(--mono);font-size:.75rem;color:var(--text3)}
+.yt-link{color:var(--red);text-decoration:none;font-family:var(--mono);font-size:.78rem}.yt-link:hover{text-decoration:underline}
+.platform-dots{display:flex;gap:4px;align-items:center}
+.pdot{width:8px;height:8px;border-radius:50%;opacity:.2}
+.pdot.on{opacity:1}
+.pdot-yt{background:var(--red)}.pdot-ig{background:var(--purple)}.pdot-fb{background:var(--blue)}
+.mode-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600;font-family:var(--mono)}
+.chip-auto{background:rgba(34,197,94,.1);color:var(--green)}
+.chip-manual{background:rgba(59,130,246,.1);color:var(--blue)}
+.delete-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 6px;border-radius:6px;font-size:.9rem;transition:all .15s}
+.delete-btn:hover{color:var(--red);background:rgba(255,45,45,.1)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+/* INFO BOXES */
+.info-box{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:14px 16px;font-size:.82rem;color:#93c5fd;line-height:1.6;margin-bottom:20px}
+.info-box strong{color:#bfdbfe}
+.warn-box{background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.2);border-radius:10px;padding:14px 16px;font-size:.82rem;color:#fde68a;line-height:1.6;margin-bottom:0}
+.green-box{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:14px 16px;font-size:.82rem;color:#86efac;line-height:1.6;margin-bottom:20px}
+/* INSTRUCTIONS OVERLAY */
+.instructions-list{color:var(--text2);font-size:.85rem;line-height:2.2;padding-left:20px}
+.instructions-list li{margin-bottom:4px}
+.code-tag{background:var(--s2);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:.8rem;color:var(--text)}
+/* TOAST */
+#toast{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast-item{padding:12px 18px;border-radius:10px;font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:8px;pointer-events:all;animation:toastIn .25s ease;box-shadow:0 4px 20px rgba(0,0,0,.5);max-width:340px}
+.toast-success{background:#0f2a1a;border:1px solid var(--green);color:var(--green)}
+.toast-error{background:#2a0f0f;border:1px solid var(--red);color:var(--red2)}
+.toast-info{background:#0f1a2a;border:1px solid var(--blue);color:var(--blue)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+hr.divider{border:none;border-top:1px solid var(--border);margin:24px 0}
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div id="setupOverlay" class="overlay hidden">
+  <div class="overlay-box">
+    <h1>⚙️ First-time Setup</h1>
+    <p>Create a Google Cloud project, enable <strong>Drive API + Sheets API</strong>, create an <strong>OAuth 2.0 Web Client ID</strong> at <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>, add this URL as an authorized origin. Then create a blank <a href="https://sheets.google.com" target="_blank">Google Sheet</a>.</p>
+    <div class="field"><label>OAuth 2.0 Client ID</label><input id="setupClientId" type="text" placeholder="123456789-abc.apps.googleusercontent.com"></div>
+    <div class="field"><label>Google Sheet ID</label><input id="setupSheetId" type="text" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"></div>
+    <button class="btn btn-primary btn-full" onclick="saveSetup()">Save & Continue →</button>
+  </div>
+</div>
+
+<!-- META TOKEN INSTRUCTIONS OVERLAY -->
+<div id="metaInstructions" class="overlay hidden">
+  <div class="overlay-box" style="max-width:560px">
+    <button class="overlay-close" onclick="hide('metaInstructions')">✕</button>
+    <h1>📘 How to Get Your Page Access Token</h1>
+    <p>A Page Access Token lets the Apps Script post to Instagram and Facebook on your behalf. Takes about 10 minutes to set up once.</p>
+    <ol class="instructions-list">
+      <li>Go to <a href="https://developers.facebook.com/apps" target="_blank">developers.facebook.com/apps</a> → <strong>Create App</strong> → Other → Business</li>
+      <li>Inside your app → <strong>Add Product</strong> → add <strong>Facebook Login for Business</strong></li>
+      <li>Go to <a href="https://developers.facebook.com/tools/explorer" target="_blank">Graph API Explorer</a></li>
+      <li>Select your app → click <strong>Generate Access Token</strong> → add permissions:<br>
+        <span class="code-tag">pages_manage_posts</span> <span class="code-tag">pages_read_engagement</span> <span class="code-tag">pages_show_list</span> <span class="code-tag">instagram_basic</span> <span class="code-tag">instagram_content_publish</span>
+      </li>
+      <li>Click <strong>Generate Token</strong> → authorize → copy the token</li>
+      <li>Paste it in Settings → Meta section → click <strong>Auto-fetch IDs</strong> → Save</li>
+    </ol>
+    <div class="warn-box">⚠️ Explorer tokens expire in ~60 days. For a never-expiring token, use a System User token under Business Settings in your Meta developer app.</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loadingScreen">
+  <div class="load-logo">YT <span>Scheduler</span></div>
+  <div class="spinner" id="loadSpinner" style="border-top-color:var(--red)"></div>
+  <div class="load-status" id="loadStatus">Initializing Google APIs...</div>
+  <button class="btn btn-ghost btn-sm hidden" id="loadRetry" style="margin-top:8px" onclick="location.reload()">↻ Reload</button>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="hidden">
+  <div class="login-logo">YT <span>Scheduler</span></div>
+  <p class="login-sub">Auto-merge & schedule to YouTube, Instagram & Facebook — 100% free</p>
+  <button class="google-btn" onclick="signIn()">
+    <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+    Sign in with Google
+  </button>
+  <p class="login-note">Grants Drive + Sheets access. <span class="setup-link" onclick="showSetup()">Change config</span></p>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="hidden">
+  <header>
+    <div class="header-logo">YT <span>Scheduler</span></div>
+    <div class="header-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <span id="userEmail">user@gmail.com</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>
+    </div>
+  </header>
+  <nav>
+    <div class="nav-tab active" data-tab="upload" onclick="switchTab('upload')">📤 Upload</div>
+    <div class="nav-tab" data-tab="queue" onclick="switchTab('queue')">📋 Queue</div>
+    <div class="nav-tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Settings</div>
+  </nav>
+  <main>
+
+    <!-- ══ UPLOAD TAB ══ -->
+    <div id="tabUpload">
+      <div class="mode-tabs">
+        <div class="mode-tab active" id="modeTabAuto" onclick="setMode('auto')">🤖 Auto Mode</div>
+        <div class="mode-tab" id="modeTabManual" onclick="setMode('manual')">✋ Manual Upload</div>
+      </div>
+
+      <!-- AUTO MODE -->
+      <div id="autoModePanel">
+        <div class="green-box"><strong>🤖 Fully Automatic:</strong> GitHub Actions runs daily, randomly picks one unused hook + one unused main video, merges them with FFmpeg, and schedules to your selected platforms. Just upload clips to Drive folders — everything else is hands-free.</div>
+
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-num" id="statHooks">—</div><div class="stat-label">Hook Clips</div><div class="stat-sub" id="statHooksSub">in hooks folder</div></div>
+          <div class="stat-box"><div class="stat-num" id="statVideos">—</div><div class="stat-label">Main Videos</div><div class="stat-sub" id="statVideosSub">in videos folder</div></div>
+          <div class="stat-box"><div class="stat-num" id="statPending">—</div><div class="stat-label">Scheduled</div><div class="stat-sub" id="statPendingSub">pending upload</div></div>
+        </div>
+
+        <div class="auto-flow">
+          <div class="auto-flow-box"><div class="auto-flow-label">Hook Folder</div><div class="auto-flow-val">🎣 Random</div></div>
+          <div class="auto-flow-arrow">+</div>
+          <div class="auto-flow-box"><div class="auto-flow-label">Videos Folder</div><div class="auto-flow-val">🎬 Random</div></div>
+          <div class="auto-flow-arrow">→</div>
+          <div class="auto-flow-box"><div class="auto-flow-label">FFmpeg Merge</div><div class="auto-flow-val">⚙️ GitHub</div></div>
+          <div class="auto-flow-arrow">→</div>
+          <div class="auto-flow-box"><div class="auto-flow-label">Platforms</div><div class="auto-flow-val" id="autoPlatformVal">▶️ 📸 👥</div></div>
+        </div>
+
+        <!-- Platform toggles for Auto Mode -->
+        <div style="margin-bottom:20px">
+          <div class="section-title">Post To (Auto Mode)</div>
+          <div class="platform-grid">
+            <div class="platform-option always">
+              <div class="platform-label"><span class="platform-icon">▶️</span><span class="platform-name">YouTube</span><span class="platform-ok">always on</span></div>
+            </div>
+            <label class="platform-option">
+              <input type="checkbox" id="autoPostInstagram">
+              <div class="platform-label"><span class="platform-icon">📸</span><span class="platform-name">Instagram Reels</span><span class="platform-sub" id="autoIgStatus">configure in settings</span></div>
+            </label>
+            <label class="platform-option">
+              <input type="checkbox" id="autoPostFacebook">
+              <div class="platform-label"><span class="platform-icon">👥</span><span class="platform-name">Facebook Page</span><span class="platform-sub" id="autoFbStatus">configure in settings</span></div>
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="refreshAutoStats()">↻ Refresh Stats</button>
+          <button class="btn btn-ghost btn-sm" onclick="switchTab('settings')">⚙️ Configure</button>
+          <a class="btn btn-ghost btn-sm" href="https://github.com" target="_blank">🐙 GitHub Actions →</a>
+        </div>
+      </div>
+
+      <!-- MANUAL MODE -->
+      <div id="manualModePanel" class="hidden">
+        <div class="info-box"><strong>Manual Upload:</strong> Upload a specific video directly to Drive and schedule it to your selected platforms at a chosen time.</div>
+        <div class="upload-grid">
+          <div>
+            <div class="section-title">Video File</div>
+            <div class="drop-zone" id="videoDropZone">
+              <input type="file" id="videoInput" accept="video/*" onchange="handleVideoSelect(this)">
+              <div class="drop-icon">🎬</div>
+              <div class="drop-label">Drop video or click to browse</div>
+              <div class="drop-sub">MP4, MOV, AVI — any size</div>
+              <div id="videoPreview" class="hidden"></div>
+            </div>
+            <div style="margin-top:16px">
+              <div class="section-title">Thumbnail (optional)</div>
+              <div class="drop-zone" id="thumbDropZone" style="padding:18px">
+                <input type="file" id="thumbInput" accept="image/*" onchange="handleThumbSelect(this)">
+                <div class="drop-icon" style="font-size:1.4rem">🖼️</div>
+                <div class="drop-label">Drop thumbnail or click</div>
+                <div class="drop-sub">JPG, PNG — 1280×720</div>
+                <div id="thumbPreview" class="hidden"></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="section-title">Video Details</div>
+            <div class="field"><label>Title *</label><input id="titleInput" type="text" placeholder="My video" maxlength="100"></div>
+            <div class="field"><label>Description</label><textarea id="descInput" placeholder="Description..."></textarea></div>
+            <div class="field"><label>Tags (comma-separated)</label><input id="tagsInput" type="text" placeholder="tag1, tag2"></div>
+            <div class="field-row">
+              <div class="field" style="margin:0"><label>Category</label>
+                <select id="categoryInput">
+                  <option value="22">People & Blogs</option><option value="24">Entertainment</option>
+                  <option value="27">Education</option><option value="28">Science & Tech</option>
+                  <option value="10">Music</option><option value="20">Gaming</option>
+                  <option value="17">Sports</option><option value="19">Travel</option>
+                  <option value="26">How-to & Style</option><option value="25">News & Politics</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0"><label>Privacy</label>
+                <select id="privacyInput"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <hr class="divider">
+        <div class="upload-grid">
+          <div>
+            <div class="section-title">Content Type</div>
+            <div class="type-selector">
+              <label class="type-option"><input type="radio" name="videoType" value="video" checked>
+                <div class="type-label"><span class="type-icon">📹</span><div><div class="type-text">Video</div><div class="type-sub">Regular YouTube video</div></div></div>
+              </label>
+              <label class="type-option"><input type="radio" name="videoType" value="short">
+                <div class="type-label"><span class="type-icon">📱</span><div><div class="type-text">Short</div><div class="type-sub">Vertical, under 60s</div></div></div>
+              </label>
+            </div>
+          </div>
+          <div>
+            <div class="section-title">Schedule</div>
+            <div class="schedule-box">
+              <div class="field-row" style="margin-bottom:12px">
+                <div class="field" style="margin:0"><label>Date</label><input type="date" id="schedDate"></div>
+                <div class="field" style="margin:0"><label>Time</label><input type="time" id="schedTime"></div>
+              </div>
+              <div class="field" style="margin:0"><label>Frequency</label>
+                <select id="freqInput"><option value="once">Once</option><option value="daily">Daily</option><option value="weekly">Weekly</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Platform selector for Manual Mode -->
+        <div style="margin-top:20px">
+          <div class="section-title">Post To</div>
+          <div class="platform-grid">
+            <div class="platform-option always">
+              <div class="platform-label"><span class="platform-icon">▶️</span><span class="platform-name">YouTube</span><span class="platform-ok">always on</span></div>
+            </div>
+            <label class="platform-option">
+              <input type="checkbox" id="manualPostInstagram">
+              <div class="platform-label"><span class="platform-icon">📸</span><span class="platform-name">Instagram Reels</span><span class="platform-sub" id="manualIgStatus">configure in settings</span></div>
+            </label>
+            <label class="platform-option">
+              <input type="checkbox" id="manualPostFacebook">
+              <div class="platform-label"><span class="platform-icon">👥</span><span class="platform-name">Facebook Page</span><span class="platform-sub" id="manualFbStatus">configure in settings</span></div>
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-top:24px">
+          <button class="btn btn-primary" id="submitBtn" onclick="handleSubmit()">
+            <span id="submitBtnText">📤 Schedule Upload</span>
+          </button>
+        </div>
+        <div id="progressArea" class="hidden">
+          <div class="progress-label"><span id="progressLabel">Uploading...</span><span id="progressPct" style="font-family:var(--mono)">0%</span></div>
+          <div class="progress-bar-outer"><div id="progressBar" class="progress-bar-inner" style="width:0%"></div></div>
+          <div class="progress-steps" id="progressSteps"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ QUEUE TAB ══ -->
+    <div id="tabQueue" class="hidden">
+      <div class="queue-header">
+        <div><div style="font-size:1.1rem;font-weight:700">Upload Queue</div><div class="queue-count" id="queueCount">—</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻ Refresh</button>
+      </div>
+      <div id="queueContent"><div class="empty-state"><div class="empty-icon">⏳</div><div>Loading...</div></div></div>
+    </div>
+
+    <!-- ══ SETTINGS TAB ══ -->
+    <div id="tabSettings" class="hidden">
+
+      <!-- Google Config -->
+      <div class="card">
+        <h3>Google Configuration</h3>
+        <p>OAuth Client ID for sign-in. Sheet ID for the schedule database.</p>
+        <div class="field"><label>OAuth 2.0 Client ID</label><input id="settingsClientId" type="text"></div>
+        <div class="field"><label>Google Sheet ID</label><input id="settingsSheetId" type="text"></div>
+        <button class="btn btn-primary btn-sm" onclick="saveGoogleSettings()">Save & Reload</button>
+        <hr class="divider">
+        <div style="font-size:.82rem;color:var(--text2);line-height:1.9">
+          Sheet: <span style="font-family:var(--mono);color:var(--text)" id="sheetIdDisplay">—</span> — <a id="sheetLink" href="#" target="_blank" style="color:var(--red)">Open →</a><br>
+          Apps Script: <a href="https://script.google.com" target="_blank" style="color:var(--red)">script.google.com →</a>
+        </div>
+      </div>
+
+      <!-- Auto Mode Config -->
+      <div class="card">
+        <h3>🤖 Auto Mode — Drive Folders</h3>
+        <p>Folder IDs from Google Drive. GitHub Actions reads these to pick files for merging each day.</p>
+        <div class="field">
+          <label>Hooks Folder ID</label>
+          <input id="hookFolderId" type="text" placeholder="1ABC...xyz">
+          <div class="field-hint">drive.google.com/drive/folders/<strong>THIS_PART</strong></div>
+        </div>
+        <div class="field">
+          <label>Main Videos Folder ID</label>
+          <input id="videoFolderId" type="text" placeholder="1DEF...abc">
+          <div class="field-hint">drive.google.com/drive/folders/<strong>THIS_PART</strong></div>
+        </div>
+        <hr class="divider">
+        <h3 style="margin-bottom:4px">Default Video Metadata</h3>
+        <p>Applied to every auto-merged video when posted.</p>
+        <div class="field"><label>Default Title</label><input id="autoTitle" type="text" placeholder="My Daily Video"></div>
+        <div class="field"><label>Default Description</label><textarea id="autoDesc" placeholder="Check out my channel..."></textarea></div>
+        <div class="field"><label>Default Tags</label><input id="autoTags" type="text" placeholder="tag1, tag2, tag3"></div>
+        <div class="field-row">
+          <div class="field" style="margin:0"><label>Category</label>
+            <select id="autoCategory">
+              <option value="22">People & Blogs</option><option value="24">Entertainment</option>
+              <option value="27">Education</option><option value="28">Science & Tech</option>
+              <option value="10">Music</option><option value="20">Gaming</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0"><label>Privacy</label>
+            <select id="autoPrivacy"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field" style="margin:0"><label>Post Time (UTC)</label><input id="autoTime" type="time" value="10:00"></div>
+          <div class="field" style="margin:0"><label>Content Type</label>
+            <select id="autoType"><option value="video">Video</option><option value="short">Short</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveAutoSettings()">💾 Save Auto Settings</button>
+        <div id="autoSettingsStatus" style="margin-top:10px;font-size:.78rem;font-family:var(--mono);color:var(--text3)"></div>
+      </div>
+
+      <!-- Meta Config -->
+      <div class="card">
+        <h3>📱 Instagram & Facebook</h3>
+        <p>Paste your Meta Page Access Token to enable Instagram Reels and Facebook Page posting for both Auto and Manual modes. <a href="#" onclick="show('metaInstructions');return false;" style="color:var(--red)">How to get it →</a></p>
+        <div class="field"><label>Page Access Token</label><input id="metaToken" type="password" placeholder="Paste your long-lived Page Access Token"></div>
+        <div class="field-row">
+          <div class="field" style="margin:0"><label>Facebook Page ID</label><input id="metaPageId" type="text" placeholder="Auto-filled or enter manually"></div>
+          <div class="field" style="margin:0"><label>Instagram User ID</label><input id="metaIgId" type="text" placeholder="Auto-filled or enter manually"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-blue btn-sm" onclick="fetchMetaIds()">🔍 Auto-fetch IDs</button>
+          <button class="btn btn-primary btn-sm" onclick="saveMetaSettings()">💾 Save Meta Settings</button>
+          <button class="btn btn-ghost btn-sm" onclick="testMetaToken()">✓ Test Token</button>
+        </div>
+        <div id="metaStatus" style="margin-top:12px;font-size:.78rem;font-family:var(--mono);color:var(--text3)"></div>
+      </div>
+
+      <!-- GitHub Setup Guide -->
+      <div class="card">
+        <h3>🐙 GitHub Actions Setup</h3>
+        <p>The auto-merge runs on GitHub Actions free tier. Follow these steps once.</p>
+        <ol style="color:var(--text2);font-size:.85rem;line-height:2.4;padding-left:20px">
+          <li>Create a free GitHub account → new <strong style="color:var(--text)">private repo</strong></li>
+          <li>Upload <span style="background:var(--s2);padding:1px 7px;border-radius:4px;font-family:var(--mono);font-size:.8rem">merge.py</span> and <span style="background:var(--s2);padding:1px 7px;border-radius:4px;font-family:var(--mono);font-size:.8rem">.github/workflows/merge.yml</span></li>
+          <li>Google Cloud → IAM & Admin → Service Accounts → Create → download JSON key</li>
+          <li>Share your Sheet + both Drive folders with the service account email (Editor access)</li>
+          <li>GitHub repo → Settings → Secrets → Actions → add:<br>
+            &nbsp;&nbsp;• <span style="background:var(--s2);padding:1px 7px;border-radius:4px;font-family:var(--mono);font-size:.8rem">SHEET_ID</span> — your Google Sheet ID<br>
+            &nbsp;&nbsp;• <span style="background:var(--s2);padding:1px 7px;border-radius:4px;font-family:var(--mono);font-size:.8rem">GOOGLE_CREDS</span> — entire contents of the JSON key file
+          </li>
+          <li>Actions tab → run <strong style="color:var(--text)">Auto Merge & Schedule</strong> manually once to test</li>
+        </ol>
+        <div class="warn-box">⚠️ GitHub Actions free tier: 2,000 min/month. Each merge run takes ~5-10 min = 200+ runs/month. More than enough for daily posting.</div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SCOPES='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+const DISCOVERY=['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest','https://www.googleapis.com/discovery/v1/apis/sheets/v4/rest'];
+const SHEET_HEADERS=['ID','Title','Description','Tags','CategoryId','Type','Privacy','DriveVideoId','DriveThumbnailId','ScheduledAt','Frequency','Status','YouTubeId','Notes','CreatedAt','PostInstagram','PostFacebook'];
+const CFG={get clientId(){return localStorage.getItem('yt_client_id')||'';},get sheetId(){return localStorage.getItem('yt_sheet_id')||'';}};
+
+let _gapiResolve,_gapiReject,_gisResolve,_gisReject;
+const gapiReady=new Promise((r,j)=>{_gapiResolve=r;_gapiReject=j;});
+const gisReady=new Promise((r,j)=>{_gisResolve=r;_gisReject=j;});
+let tokenClient=null;
+
+function onGapiLoad(){
+  setLoadStatus('Loading Google API client...');
+  gapi.load('client',async()=>{
+    try{await gapi.client.init({discoveryDocs:DISCOVERY});_gapiResolve();}
+    catch(e){_gapiReject(new Error('GAPI init failed: '+(e?.message||e?.details||'unknown')+'. Ensure Drive API + Sheets API are enabled.'));}
+  });
+}
+function onGisLoad(){
+  setLoadStatus('Loading Google Identity Services...');
+  try{
+    if(CFG.clientId) tokenClient=google.accounts.oauth2.initTokenClient({client_id:CFG.clientId,scope:SCOPES,callback:onTokenReceived,error_callback:e=>showToast('Auth error: '+(e.message||e.type),'error')});
+    _gisResolve();
+  }catch(e){_gisReject(new Error('GIS init failed: '+(e?.message||'unknown')));}
+}
+function loadScript(src,onload,label){
+  const s=document.createElement('script');s.src=src;s.async=true;s.onload=onload;
+  s.onerror=()=>{const msg=`Could not load ${label}. Ad blocker may be blocking ${new URL(src).host}.`;label.includes('Identity')?_gisReject(new Error(msg)):_gapiReject(new Error(msg));};
+  document.head.appendChild(s);
+}
+async function boot(){
+  if(!CFG.clientId||!CFG.sheetId){hide('loadingScreen');show('setupOverlay');return;}
+  loadScript('https://apis.google.com/js/api.js',onGapiLoad,'Google API');
+  loadScript('https://accounts.google.com/gsi/client',onGisLoad,'Google Identity Services');
+  setLoadStatus('Waiting for Google APIs...');
+  try{
+    await Promise.race([Promise.all([gapiReady,gisReady]),new Promise((_,r)=>setTimeout(()=>r(new Error('Timed out (20s). Ad blocker may be blocking Google APIs.')),20000))]);
+  }catch(e){setLoadStatus('⚠️ '+e.message);hide('loadSpinner');show('loadRetry');return;}
+  setLoadStatus('Ready!');hide('loadingScreen');show('loginScreen');
+}
+boot();
+
+function saveSetup(){
+  const cid=document.getElementById('setupClientId').value.trim();
+  const sid=document.getElementById('setupSheetId').value.trim();
+  if(!cid||!sid){showToast('Both fields required','error');return;}
+  localStorage.setItem('yt_client_id',cid);localStorage.setItem('yt_sheet_id',sid);location.reload();
+}
+function showSetup(){document.getElementById('setupClientId').value=CFG.clientId;document.getElementById('setupSheetId').value=CFG.sheetId;hide('loginScreen');show('setupOverlay');}
+
+async function signIn(){
+  try{await Promise.all([gapiReady,gisReady]);}catch(e){showToast('APIs not ready: '+e.message,'error');return;}
+  if(!tokenClient) tokenClient=google.accounts.oauth2.initTokenClient({client_id:CFG.clientId,scope:SCOPES,callback:onTokenReceived,error_callback:e=>showToast('Auth error: '+(e.message||e.type),'error')});
+  const existing=gapi.client.getToken();
+  tokenClient.requestAccessToken(existing?{prompt:''}:{prompt:'consent'});
+}
+async function onTokenReceived(resp){
+  if(resp.error){showToast('Sign-in failed: '+resp.error,'error');return;}
+  gapi.client.setToken({access_token:resp.access_token});
+  try{
+    const info=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:`Bearer ${resp.access_token}`}}).then(r=>r.json());
+    document.getElementById('userEmail').textContent=info.email||'Signed in';
+    const av=document.getElementById('userAvatar');
+    if(info.picture) av.innerHTML=`<img src="${info.picture}" alt="">`;
+    else av.textContent=(info.email||'U')[0].toUpperCase();
+  }catch(e){}
+  await ensureSheetHeaders();
+  hide('loginScreen');show('mainApp');
+  document.getElementById('settingsClientId').value=CFG.clientId;
+  document.getElementById('settingsSheetId').value=CFG.sheetId;
+  document.getElementById('sheetIdDisplay').textContent=CFG.sheetId;
+  document.getElementById('sheetLink').href=`https://docs.google.com/spreadsheets/d/${CFG.sheetId}`;
+  setDefaultDateTime();
+  await loadAutoSettings();
+  await loadMetaSettings();
+  await refreshAutoStats();
+  loadQueue();
+}
+function signOut(){const t=gapi.client.getToken();if(t){google.accounts.oauth2.revoke(t.access_token,()=>{});gapi.client.setToken('');}hide('mainApp');show('loginScreen');}
+function accessToken(){const t=gapi.client.getToken();if(!t||!t.access_token) throw new Error('Not signed in.');return t.access_token;}
+
+/* SHEET */
+async function ensureSheetHeaders(){
+  try{
+    const r=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:CFG.sheetId,range:'A1:Q1'});
+    if(!r.result.values||r.result.values[0]?.[0]!=='ID')
+      await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:CFG.sheetId,range:'A1:Q1',valueInputOption:'RAW',resource:{values:[SHEET_HEADERS]}});
+  }catch(e){showToast('Sheet init failed','error');console.error(e);}
+}
+async function appendRow(row){await gapi.client.sheets.spreadsheets.values.append({spreadsheetId:CFG.sheetId,range:'A:Q',valueInputOption:'RAW',resource:{values:[row]}});}
+async function deleteSheetRow(idx){await gapi.client.sheets.spreadsheets.batchUpdate({spreadsheetId:CFG.sheetId,resource:{requests:[{deleteDimension:{range:{sheetId:0,dimension:'ROWS',startIndex:idx,endIndex:idx+1}}}]}});}
+
+/* CONFIG SHEET */
+async function ensureConfigSheet(){
+  const meta=await gapi.client.sheets.spreadsheets.get({spreadsheetId:CFG.sheetId});
+  const exists=meta.result.sheets.some(s=>s.properties.title==='Config');
+  if(!exists) await gapi.client.sheets.spreadsheets.batchUpdate({spreadsheetId:CFG.sheetId,resource:{requests:[{addSheet:{properties:{title:'Config'}}}]}});
+}
+async function getConfigMap(){
+  try{const r=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:CFG.sheetId,range:'Config!A1:B40'});return Object.fromEntries((r.result.values||[]).map(r=>[r[0],r[1]||'']));}
+  catch(e){return {};}
+}
+async function setConfigValues(kvPairs){
+  await ensureConfigSheet();
+  await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:CFG.sheetId,range:`Config!A1:B${kvPairs.length}`,valueInputOption:'RAW',resource:{values:kvPairs}});
+}
+async function upsertConfigKey(key,value){
+  // Load existing config, update key, save all back
+  await ensureConfigSheet();
+  const existing=await getConfigMap();
+  existing[key]=value;
+  const pairs=Object.entries(existing);
+  await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:CFG.sheetId,range:`Config!A1:B${pairs.length}`,valueInputOption:'RAW',resource:{values:pairs}});
+}
+
+/* AUTO SETTINGS */
+async function loadAutoSettings(){
+  try{
+    const cfg=await getConfigMap();
+    if(cfg['hook_folder_id'])      document.getElementById('hookFolderId').value=cfg['hook_folder_id'];
+    if(cfg['video_folder_id'])     document.getElementById('videoFolderId').value=cfg['video_folder_id'];
+    if(cfg['default_title'])       document.getElementById('autoTitle').value=cfg['default_title'];
+    if(cfg['default_description']) document.getElementById('autoDesc').value=cfg['default_description'];
+    if(cfg['default_tags'])        document.getElementById('autoTags').value=cfg['default_tags'];
+    if(cfg['default_category'])    document.getElementById('autoCategory').value=cfg['default_category'];
+    if(cfg['default_privacy'])     document.getElementById('autoPrivacy').value=cfg['default_privacy'];
+    if(cfg['default_type'])        document.getElementById('autoType').value=cfg['default_type'];
+    if(cfg['schedule_time'])       document.getElementById('autoTime').value=cfg['schedule_time'];
+    // Restore platform toggles
+    if(cfg['auto_post_instagram']==='TRUE') document.getElementById('autoPostInstagram').checked=true;
+    if(cfg['auto_post_facebook']==='TRUE')  document.getElementById('autoPostFacebook').checked=true;
+  }catch(e){}
+}
+async function saveAutoSettings(){
+  const pairs=[
+    ['hook_folder_id',      document.getElementById('hookFolderId').value.trim()],
+    ['video_folder_id',     document.getElementById('videoFolderId').value.trim()],
+    ['default_title',       document.getElementById('autoTitle').value.trim()],
+    ['default_description', document.getElementById('autoDesc').value.trim()],
+    ['default_tags',        document.getElementById('autoTags').value.trim()],
+    ['default_category',    document.getElementById('autoCategory').value],
+    ['default_privacy',     document.getElementById('autoPrivacy').value],
+    ['default_type',        document.getElementById('autoType').value],
+    ['schedule_time',       document.getElementById('autoTime').value],
+    ['auto_post_instagram', document.getElementById('autoPostInstagram').checked?'TRUE':'FALSE'],
+    ['auto_post_facebook',  document.getElementById('autoPostFacebook').checked?'TRUE':'FALSE'],
+  ];
+  try{
+    // Preserve meta credentials by merging with existing config
+    const existing=await getConfigMap();
+    const merged={...existing,...Object.fromEntries(pairs)};
+    const allPairs=Object.entries(merged);
+    await ensureConfigSheet();
+    await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:CFG.sheetId,range:`Config!A1:B${allPairs.length}`,valueInputOption:'RAW',resource:{values:allPairs}});
+    document.getElementById('autoSettingsStatus').textContent='✅ Saved!';
+    showToast('Auto settings saved!','success');
+    await refreshAutoStats();
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+}
+
+/* META SETTINGS */
+async function loadMetaSettings(){
+  try{
+    const cfg=await getConfigMap();
+    if(cfg['meta_page_token']) document.getElementById('metaToken').value=cfg['meta_page_token'];
+    if(cfg['meta_page_id'])    document.getElementById('metaPageId').value=cfg['meta_page_id'];
+    if(cfg['meta_ig_user_id']) document.getElementById('metaIgId').value=cfg['meta_ig_user_id'];
+    const hasPage=!!(cfg['meta_page_id']);
+    const hasIg=!!(cfg['meta_ig_user_id']);
+    updatePlatformStatus(hasPage,hasIg);
+    if(cfg['meta_page_token']) document.getElementById('metaStatus').textContent=`✅ Token loaded. Page: ${cfg['meta_page_id']||'—'} | IG: ${cfg['meta_ig_user_id']||'—'}`;
+  }catch(e){}
+}
+async function saveMetaSettings(){
+  const token=document.getElementById('metaToken').value.trim();
+  const pageId=document.getElementById('metaPageId').value.trim();
+  const igId=document.getElementById('metaIgId').value.trim();
+  if(!token){showToast('Token is required','error');return;}
+  try{
+    const existing=await getConfigMap();
+    const merged={...existing,meta_page_token:token,meta_page_id:pageId,meta_ig_user_id:igId};
+    const pairs=Object.entries(merged);
+    await ensureConfigSheet();
+    await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:CFG.sheetId,range:`Config!A1:B${pairs.length}`,valueInputOption:'RAW',resource:{values:pairs}});
+    showToast('Meta settings saved!','success');
+    document.getElementById('metaStatus').textContent=`✅ Saved. Page: ${pageId||'—'} | IG: ${igId||'—'}`;
+    updatePlatformStatus(!!pageId,!!igId);
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+}
+async function fetchMetaIds(){
+  const token=document.getElementById('metaToken').value.trim();
+  if(!token){showToast('Paste your token first','error');return;}
+  document.getElementById('metaStatus').textContent='Fetching...';
+  try{
+    const pagesResp=await fetch(`https://graph.facebook.com/v20.0/me/accounts?access_token=${token}`);
+    const pages=await pagesResp.json();
+    if(pages.error) throw new Error(pages.error.message);
+    if(!pages.data||pages.data.length===0) throw new Error('No Facebook Pages found. Check pages_show_list permission.');
+    const page=pages.data[0];
+    document.getElementById('metaPageId').value=page.id;
+    const igResp=await fetch(`https://graph.facebook.com/v20.0/${page.id}?fields=instagram_business_account&access_token=${token}`);
+    const igData=await igResp.json();
+    const igId=igData.instagram_business_account?.id||'';
+    document.getElementById('metaIgId').value=igId;
+    const msg=igId?`✅ Page "${page.name}" (${page.id}) + Instagram (${igId})`:`✅ Page "${page.name}" (${page.id}) — ⚠️ no Instagram linked`;
+    document.getElementById('metaStatus').textContent=msg;
+    showToast('IDs fetched! Click Save Meta Settings.','success');
+  }catch(e){document.getElementById('metaStatus').textContent='❌ '+e.message;showToast('Fetch failed: '+e.message,'error');}
+}
+async function testMetaToken(){
+  const token=document.getElementById('metaToken').value.trim();
+  if(!token){showToast('No token to test','error');return;}
+  document.getElementById('metaStatus').textContent='Testing...';
+  try{
+    const r=await fetch(`https://graph.facebook.com/v20.0/me?access_token=${token}`);
+    const d=await r.json();
+    if(d.error) throw new Error(d.error.message);
+    document.getElementById('metaStatus').textContent=`✅ Valid — authenticated as: ${d.name} (${d.id})`;
+    showToast('Token is valid!','success');
+  }catch(e){document.getElementById('metaStatus').textContent='❌ Invalid: '+e.message;showToast('Token test failed','error');}
+}
+function updatePlatformStatus(hasPage,hasIg){
+  ['autoIgStatus','manualIgStatus'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=hasIg?'✅ connected':'configure in settings';el.style.color=hasIg?'var(--green)':'';}});
+  ['autoFbStatus','manualFbStatus'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=hasPage?'✅ connected':'configure in settings';el.style.color=hasPage?'var(--green)':'';}});
+}
+
+/* AUTO STATS */
+async function refreshAutoStats(){
+  try{
+    const cfg=await getConfigMap();
+    const hookId=cfg['hook_folder_id']||'';const vidId=cfg['video_folder_id']||'';
+    document.getElementById('statHooksSub').textContent=hookId?'folder set':'⚠️ not set';
+    document.getElementById('statVideosSub').textContent=vidId?'folder set':'⚠️ not set';
+    const r=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:CFG.sheetId,range:'A2:L1000'});
+    const rows=(r.result.values||[]).filter(r=>r.length>1);
+    document.getElementById('statPending').textContent=rows.filter(r=>(r[11]||'').toLowerCase()==='pending').length;
+    if(hookId) countDriveFiles(hookId,'statHooks'); else document.getElementById('statHooks').textContent='—';
+    if(vidId)  countDriveFiles(vidId,'statVideos'); else document.getElementById('statVideos').textContent='—';
+    // Update flow diagram
+    const doIG=cfg['auto_post_instagram']==='TRUE';
+    const doFB=cfg['auto_post_facebook']==='TRUE';
+    document.getElementById('autoPlatformVal').textContent=['▶️',doIG?'📸':'',doFB?'👥':''].filter(Boolean).join(' ');
+  }catch(e){console.error('Stats error',e);}
+}
+async function countDriveFiles(folderId,elId){
+  try{
+    const token=accessToken();
+    const resp=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`'${folderId}' in parents and mimeType contains 'video/' and trashed=false`)}&fields=files(id)&pageSize=100`,{headers:{Authorization:`Bearer ${token}`}});
+    const data=await resp.json();
+    document.getElementById(elId).textContent=(data.files||[]).length;
+  }catch(e){document.getElementById(elId).textContent='?';}
+}
+
+/* DRIVE UPLOAD */
+async function uploadToDrive(file,onProgress){
+  const token=accessToken();const CHUNK=5*1024*1024;
+  const init=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',{
+    method:'POST',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json','X-Upload-Content-Type':file.type,'X-Upload-Content-Length':file.size},
+    body:JSON.stringify({name:file.name,mimeType:file.type}),
+  });
+  if(!init.ok){const e=await init.text();throw new Error(`Drive init failed (${init.status}): ${e}`);}
+  const sessionUri=init.headers.get('Location');
+  let offset=0;
+  while(offset<file.size){
+    const end=Math.min(offset+CHUNK,file.size);const chunk=file.slice(offset,end);
+    const res=await fetch(sessionUri,{method:'PUT',headers:{'Content-Range':`bytes ${offset}-${end-1}/${file.size}`,'Content-Type':file.type},body:chunk});
+    if(res.status===200||res.status===201){onProgress(100);return await res.json();}
+    else if(res.status===308){offset=end;onProgress(Math.round((offset/file.size)*100));}
+    else{const e=await res.text();throw new Error(`Chunk failed (${res.status}): ${e}`);}
+  }
+  throw new Error('Upload ended without confirmation');
+}
+async function uploadSmall(file){
+  const token=accessToken();const form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify({name:file.name,mimeType:file.type})],{type:'application/json'}));form.append('file',file);
+  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Authorization':`Bearer ${token}`},body:form});
+  if(!res.ok) throw new Error(`Thumbnail upload failed (${res.status})`);
+  return await res.json();
+}
+
+/* FORM */
+function handleVideoSelect(input){const f=input.files[0];if(!f)return;const d=document.getElementById('videoPreview');d.innerHTML=`<div class="file-preview"><span>🎬</span><span class="file-preview-name">${esc(f.name)}</span><span class="file-preview-size">${fmtBytes(f.size)}</span></div>`;d.classList.remove('hidden');}
+function handleThumbSelect(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{const d=document.getElementById('thumbPreview');d.innerHTML=`<div class="thumb-preview"><img src="${e.target.result}" alt=""></div>`;d.classList.remove('hidden');};r.readAsDataURL(f);}
+function setDefaultDateTime(){const now=new Date();now.setMinutes(0,0,0);now.setHours(now.getHours()+1);document.getElementById('schedDate').value=now.toISOString().slice(0,10);document.getElementById('schedTime').value=now.toTimeString().slice(0,5);}
+
+async function handleSubmit(){
+  const title=document.getElementById('titleInput').value.trim();
+  const videoFile=document.getElementById('videoInput').files[0];
+  const thumbFile=document.getElementById('thumbInput').files[0];
+  const date=document.getElementById('schedDate').value;
+  const time=document.getElementById('schedTime').value;
+  const doIG=document.getElementById('manualPostInstagram').checked;
+  const doFB=document.getElementById('manualPostFacebook').checked;
+  if(!videoFile){showToast('Please select a video file','error');return;}
+  if(!title){showToast('Please enter a title','error');return;}
+  if(!date||!time){showToast('Please set a schedule date and time','error');return;}
+  try{accessToken();}catch(e){showToast('Session expired — please sign in again','error');signOut();return;}
+  const btn=document.getElementById('submitBtn');btn.disabled=true;
+  document.getElementById('submitBtnText').innerHTML='<span class="spinner"></span> Uploading...';
+  show('progressArea');clearSteps();
+  try{
+    addStep('Uploading video to Google Drive...','active');
+    const vr=await uploadToDrive(videoFile,pct=>setProgress(pct*0.75,`Uploading: ${pct}%`));
+    markStep(0,'done');
+    let thumbId='';
+    if(thumbFile){addStep('Uploading thumbnail...','active');const tr=await uploadSmall(thumbFile);thumbId=tr.id;markStep(1,'done');}
+    addStep('Saving to schedule sheet...','active');
+    setProgress(90,'Saving...');
+    const scheduledAt=new Date(`${date}T${time}`).toISOString();
+    await appendRow([Date.now().toString(),title,document.getElementById('descInput').value,document.getElementById('tagsInput').value,document.getElementById('categoryInput').value,document.querySelector('input[name="videoType"]:checked').value,document.getElementById('privacyInput').value,vr.id,thumbId,scheduledAt,document.getElementById('freqInput').value,'pending','','',new Date().toISOString(),doIG?'TRUE':'FALSE',doFB?'TRUE':'FALSE']);
+    markStep(thumbFile?2:1,'done');setProgress(100,'✅ Scheduled!');
+    const platforms=['YouTube',doIG?'Instagram':'',doFB?'Facebook':''].filter(Boolean).join(' + ');
+    showToast(`Scheduled on ${platforms}!`,'success');
+    document.getElementById('titleInput').value='';document.getElementById('descInput').value='';document.getElementById('tagsInput').value='';document.getElementById('videoInput').value='';document.getElementById('thumbInput').value='';document.getElementById('videoPreview').classList.add('hidden');document.getElementById('thumbPreview').classList.add('hidden');document.getElementById('manualPostInstagram').checked=false;document.getElementById('manualPostFacebook').checked=false;setDefaultDateTime();
+    await loadQueue();setTimeout(()=>switchTab('queue'),1500);
+  }catch(err){showToast('Error: '+err.message,'error');console.error(err);}
+  finally{btn.disabled=false;document.getElementById('submitBtnText').innerHTML='📤 Schedule Upload';setTimeout(()=>hide('progressArea'),4000);}
+}
+
+/* MODE TOGGLE */
+function setMode(mode){
+  document.getElementById('modeTabAuto').classList.toggle('active',mode==='auto');
+  document.getElementById('modeTabManual').classList.toggle('active',mode==='manual');
+  document.getElementById('autoModePanel').classList.toggle('hidden',mode!=='auto');
+  document.getElementById('manualModePanel').classList.toggle('hidden',mode!=='manual');
+}
+
+/* QUEUE */
+async function loadQueue(){
+  const el=document.getElementById('queueContent');
+  el.innerHTML='<div class="empty-state"><div class="empty-icon">⏳</div><div>Loading...</div></div>';
+  try{
+    const r=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:CFG.sheetId,range:'A2:Q1000'});
+    const rows=(r.result.values||[]).filter(r=>r.length>1);
+    document.getElementById('queueCount').textContent=`${rows.length} video${rows.length!==1?'s':''}`;
+    if(rows.length===0){el.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div>No videos scheduled yet.</div></div>';return;}
+    el.innerHTML=`<table class="queue-table">
+      <thead><tr><th>Title</th><th>Mode</th><th>Type</th><th>Scheduled</th><th>Platforms</th><th>Status</th><th>YouTube</th><th></th></tr></thead>
+      <tbody>${[...rows].reverse().map((row,i)=>rowHtml(row,rows.length-i)).join('')}</tbody>
+    </table>`;
+  }catch(e){el.innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><div>Failed to load.</div></div>';console.error(e);}
+}
+function rowHtml(row,sheetDataRow){
+  const title=row[1]||'(no title)';const type=row[5]||'video';
+  const sched=row[9]?new Date(row[9]).toLocaleString():'—';
+  const status=(row[11]||'pending').toLowerCase();const ytId=row[12];
+  const doIG=String(row[15]||'').toUpperCase()==='TRUE';
+  const doFB=String(row[16]||'').toUpperCase()==='TRUE';
+  const isAuto=(row[13]||'').toLowerCase().includes('hook')||(row[1]||'').toLowerCase().includes('merged_');
+  const ytLink=ytId?`<a class="yt-link" href="https://youtube.com/watch?v=${ytId}" target="_blank">▶ Watch</a>`:'—';
+  const badge={pending:'badge-pending',uploading:'badge-uploading',uploaded:'badge-uploaded',error:'badge-error'}[status]||'badge-pending';
+  const dot={pending:'🟡',uploading:'🔵',uploaded:'🟢',error:'🔴'}[status]||'🟡';
+  const dots=`<div class="platform-dots"><span class="pdot pdot-yt on" title="YouTube">●</span><span class="pdot pdot-ig ${doIG?'on':''}" title="Instagram">●</span><span class="pdot pdot-fb ${doFB?'on':''}" title="Facebook">●</span></div>`;
+  const modeChip=`<span class="mode-chip ${isAuto?'chip-auto':'chip-manual'}">${isAuto?'🤖 auto':'✋ manual'}</span>`;
+  return `<tr>
+    <td class="queue-title" title="${esc(title)}">${esc(title)}</td>
+    <td>${modeChip}</td>
+    <td class="queue-type">${type==='short'?'📱':'📹'}</td>
+    <td class="queue-time">${sched}</td>
+    <td>${dots}</td>
+    <td><span class="status-badge ${badge}">${dot} ${status}</span></td>
+    <td>${ytLink}</td>
+    <td><button class="delete-btn" onclick="confirmDelete(${sheetDataRow})" title="Remove">🗑</button></td>
+  </tr>`;
+}
+async function confirmDelete(sheetDataRow){
+  if(!confirm('Remove this video from the queue?')) return;
+  try{await deleteSheetRow(sheetDataRow);showToast('Removed','success');await loadQueue();}
+  catch(e){showToast('Delete failed: '+e.message,'error');}
+}
+
+/* SETTINGS */
+function saveGoogleSettings(){
+  const cid=document.getElementById('settingsClientId').value.trim();
+  const sid=document.getElementById('settingsSheetId').value.trim();
+  if(!cid||!sid){showToast('Both fields required','error');return;}
+  localStorage.setItem('yt_client_id',cid);localStorage.setItem('yt_sheet_id',sid);
+  showToast('Saved! Reloading...','success');setTimeout(()=>location.reload(),1000);
+}
+
+/* UI HELPERS */
+function switchTab(name){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  ['upload','queue','settings'].forEach(t=>document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('hidden',t!==name));
+  if(name==='queue') loadQueue();
+}
+function show(id){document.getElementById(id)?.classList.remove('hidden');}
+function hide(id){document.getElementById(id)?.classList.add('hidden');}
+function setLoadStatus(msg){const el=document.getElementById('loadStatus');if(el)el.textContent=msg;}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fmtBytes(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';if(b<1073741824)return(b/1048576).toFixed(1)+' MB';return(b/1073741824).toFixed(1)+' GB';}
+let _steps=[];
+function clearSteps(){_steps=[];document.getElementById('progressSteps').innerHTML='';setProgress(0,'Starting...');}
+function addStep(t,s=''){_steps.push({text:t,state:s});renderSteps();}
+function markStep(i,s){if(_steps[i]){_steps[i].state=s;renderSteps();}}
+function renderSteps(){document.getElementById('progressSteps').innerHTML=_steps.map(s=>`<div class="progress-step ${s.state}"><span class="step-dot"></span>${s.text}</div>`).join('');}
+function setProgress(pct,label){document.getElementById('progressBar').style.width=pct+'%';document.getElementById('progressPct').textContent=Math.round(pct)+'%';document.getElementById('progressLabel').textContent=label;}
+function showToast(msg,type='info'){const el=document.createElement('div');el.className=`toast-item toast-${type}`;el.innerHTML=`<span>${{success:'✅',error:'❌',info:'ℹ️'}[type]}</span> ${msg}`;document.getElementById('toast').appendChild(el);setTimeout(()=>el.remove(),4000);}
+['videoDropZone','thumbDropZone'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('dragover');});el.addEventListener('dragleave',()=>el.classList.remove('dragover'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('dragover');});});
+</script>
+</body>
+</html>
