@@ -440,6 +440,11 @@ hr.divider{border:none;border-top:1px solid var(--border);margin:24px 0}
           <input id="videoFolderId" type="text" placeholder="1DEF...abc">
           <div class="field-hint">drive.google.com/drive/folders/<strong>THIS_PART</strong></div>
         </div>
+        <div class="field">
+          <label>Merged Videos Folder ID ⚠️ Required</label>
+          <input id="mergedFolderId" type="text" placeholder="1GHI...xyz">
+          <div class="field-hint">Create this folder in YOUR Drive → share with service account email (Editor) → paste ID here</div>
+        </div>
         <hr class="divider">
         <h3 style="margin-bottom:4px">Default Video Metadata</h3>
         <p>Applied to every auto-merged video when posted.</p>
@@ -630,6 +635,7 @@ async function loadAutoSettings(){
     const cfg=await getConfigMap();
     if(cfg['hook_folder_id'])      document.getElementById('hookFolderId').value=cfg['hook_folder_id'];
     if(cfg['video_folder_id'])     document.getElementById('videoFolderId').value=cfg['video_folder_id'];
+    if(cfg['merged_folder_id'])    document.getElementById('mergedFolderId').value=cfg['merged_folder_id'];
     if(cfg['default_title'])       document.getElementById('autoTitle').value=cfg['default_title'];
     if(cfg['default_description']) document.getElementById('autoDesc').value=cfg['default_description'];
     if(cfg['default_tags'])        document.getElementById('autoTags').value=cfg['default_tags'];
@@ -646,6 +652,7 @@ async function saveAutoSettings(){
   const pairs=[
     ['hook_folder_id',      document.getElementById('hookFolderId').value.trim()],
     ['video_folder_id',     document.getElementById('videoFolderId').value.trim()],
+    ['merged_folder_id',    document.getElementById('mergedFolderId').value.trim()],
     ['default_title',       document.getElementById('autoTitle').value.trim()],
     ['default_description', document.getElementById('autoDesc').value.trim()],
     ['default_tags',        document.getElementById('autoTags').value.trim()],
